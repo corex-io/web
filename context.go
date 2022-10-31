@@ -128,7 +128,7 @@ func (ctx *Context) Error(statusCode int) {
 }
 
 // Download support download file
-func (ctx *Context) Download(filename string) {
+func (ctx *Context) Download(filename string, header map[string]string) {
 	info, err := os.Stat(filename)
 	if err != nil {
 		ctx.Error(toHTTPError(err))
@@ -143,8 +143,11 @@ func (ctx *Context) Download(filename string) {
 	ctx.ResponseWriter.Header().Set("Content-Length", fmt.Sprintf("%d", info.Size()))
 	ctx.ResponseWriter.Header().Set("Content-Type", "multipart/form-data")
 	ctx.ResponseWriter.Header().Set("Content-Disposition:", fmt.Sprintf("attachment;filename=%s", filename))
+	for k, v := range header {
+		ctx.ResponseWriter.Header().Set(k, v)
+	}
 	ctx.statusCode = http.StatusOK
-	io.Copy(ctx.ResponseWriter, f)
+	_, _ = io.Copy(ctx.ResponseWriter, f)
 }
 
 //SaveFile save file to disk
@@ -215,8 +218,8 @@ func (ctx *Context) RecvFile2(name string, path string) error {
 	if _, err = io.Copy(tmpfile, ctx.Body); err != nil {
 		return err
 	}
-	tmpfile.Close()
-	ctx.Body.Close()
+	_ = tmpfile.Close()
+	_ = ctx.Body.Close()
 	return os.Rename(tmpfile.Name(), filename)
 }
 
@@ -227,14 +230,14 @@ func (ctx *Context) RecvFile(name string, path string) (string, int64, error) {
 		return "", 0, err
 	}
 	defer file.Close()
-	filepath := filepath.Join(path, head.Filename)
-	f, err := os.OpenFile(filepath, os.O_WRONLY|os.O_CREATE, 0644)
+	fpath := filepath.Join(path, head.Filename)
+	f, err := os.OpenFile(fpath, os.O_WRONLY|os.O_CREATE, 0644)
 	if err != nil {
 		return "", 0, err
 	}
 	defer f.Close()
 	cnt, err := io.Copy(f, file)
-	return filepath, cnt, err
+	return fpath, cnt, err
 }
 
 // Render render template no cache

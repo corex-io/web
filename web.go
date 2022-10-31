@@ -65,7 +65,7 @@ func (s *Web) Load(v interface{}) error {
 }
 
 // Run run
-func (s *Web) Run() error {
+func (s *Web) Run(ctx context.Context) error {
 	s.Server = &http.Server{
 		Addr:    s.opts.Address,
 		Handler: s,
@@ -87,6 +87,14 @@ func (s *Web) Run() error {
 		return &Context{}
 	}
 	s.Log.Debugf("http serve [%s]...", s.opts.Address)
+
+	go func(ctx context.Context) {
+		select {
+		case <-ctx.Done():
+			_ = s.Shutdown(ctx)
+		}
+	}(ctx)
+
 	if s.opts.CertFile != "" && s.opts.KeyFile != "" {
 		return s.Server.ListenAndServeTLS(s.opts.CertFile, s.opts.KeyFile)
 	}
