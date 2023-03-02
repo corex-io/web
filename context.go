@@ -308,5 +308,8 @@ func (ctx *Context) GetHeader(key string, v ...string) string {
 	if ok {
 		return value[0]
 	}
-	return v[0]
+	if len(v) != 0 {
+		return v[0]
+	}
+	return ""
 }
