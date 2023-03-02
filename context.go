@@ -293,8 +293,20 @@ func (ctx *Context) JSON(v interface{}, code int, err error) {
 	if msg == "" {
 		msg = "success"
 	}
-
+	ctx.SetStatusCode(http.StatusOK)
 	result := fmt.Sprintf(`{"code": %d, "msg": "%s", "data": %s}`, code, msg, data)
 	ctx.ResponseWriter.Header().Set("Content-Type", "application/json;charset=UTF-8")
-	ctx.ResponseWriter.Write([]byte(result))
+	_, _ = ctx.ResponseWriter.Write([]byte(result))
+}
+
+func (ctx *Context) SetStatusCode(statusCode int) {
+	ctx.statusCode = statusCode
+}
+
+func (ctx *Context) GetHeader(key string, v ...string) string {
+	value, ok := ctx.Request.Header[key]
+	if ok {
+		return value[0]
+	}
+	return v[0]
 }
